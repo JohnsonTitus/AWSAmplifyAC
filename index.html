@@ -2,90 +2,98 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <!-- 1. Use local copy of streams.js instead of S3 URL -->
+    <title>Amazon Connect CCP Integration</title>
     <script src="connect-streams.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #232f3e;
+        }
+        #containerDiv {
+            width: 320px;
+            height: 500px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body onload="init()">
     <h1>Amazon Connect</h1>
     <h2>Screenpop Example</h2>
+    
+    <!-- Container for the Amazon Connect CCP -->
     <div id="containerDiv"></div>
-
+    
     <script>
-		function init() {
-        
-            // 3. Get container element properly
+        function init() {
+            // Get container element
             const containerDiv = document.getElementById('containerDiv');
             
-            // 4. Initialize CCP with correct parameters
+            // Initialize CCP with correct parameters and sizing
             connect.core.initCCP(containerDiv, {
                 ccpUrl: 'https://cherukarajohnson03.my.connect.aws/connect/ccp-v2/',
-                loginUrl: 'https://cherukarajohnson03.my.connect.aws/login',
                 loginPopup: true,
-                loginPopupAutoClose: true,      // optional, defaults to `false`
-                loginOptions: {                 // optional, if provided opens login in new window
-                    autoClose: true,              // optional, defaults to `false`
-                    height: 600,                  // optional, defaults to 578
-                    width: 400,                   // optional, defaults to 433
-                    top: 0,                       // optional, defaults to 0
-                    left: 0                       // optional, defaults to 0
-                },
                 softphone: {
                     allowFramedSoftphone: true
+                },
+                style: {
+                    width: "100%",
+                    height: "100%"
                 }
             });
-			
-		
-
-            // 5. Simplified contact handlings
+            
+            // Set up contact handling events
             connect.contact(function(contact) {
-				console.log("Contact object created:", contact);
-			
-
-				contact.onRefresh(function(contact) {
-					console.log("Contact incoming");
-				});
-
-
-
-
-				contact.onIncoming(() => console.log("Contact incoming"));
-				contact.onConnected(function() {
-					console.log(`onConnected(${contact.getContactId()})`);
-					var attributeMap = contact.getAttributes();
-					console.log("Contact attributes:", attributeMap); 
-					var name = JSON.stringify(attributeMap["name"]["value"]);
-					var zip = JSON.stringify(attributeMap["zip"]["value"]);
-                        
-                        console.log(name);
-						console.log(zip);
-                 
-						window.alert("Customer's name: " + name + "\nCustomer's zip #: " + zip);
-
-				});
-                contact.onAccepted(function() {
-					
-					console.log("Contact accepted:", contact.getContactId());
-                    try {
-                        // 6. Direct attribute access without JSON.stringify
-                        var attributeMap = contact.getAttributes();
-						console.log("Contact attributes:", attributeMap); 
-						var name = JSON.stringify(attributeMap["name"]["value"]);
-						var zip = JSON.stringify(attributeMap["zip"]["value"]);
-                        
-                        console.log(name);
-						console.log(zip);
+                console.log("Contact object created:", contact);
                 
-						window.alert("Customer's name: " + name + "\nCustomer's zip #: " + zip);
-                    } catch (error) {
-                        console.error('Error handling contact:', error);
-                    }
+                // When contact is connected
+                contact.onConnected(function() {
+                    console.log(`Contact connected: ${contact.getContactId()}`);
+                    handleContactAttributes(contact);
                 });
-				
-				contact.onEnded(function() {
-					console.log("Contact incoming");
-					});
+                
+                // When agent accepts the contact
+                contact.onAccepted(function() {
+                    console.log("Contact accepted:", contact.getContactId());
+                });
+                
+                // When contact is ended
+                contact.onEnded(function() {
+                    console.log("Contact ended:", contact.getContactId());
+                });
             });
-     }
+        }
+        
+        // Function to handle contact attributes
+        function handleContactAttributes(contact) {
+            try {
+                var attributeMap = contact.getAttributes();
+                console.log("Contact attributes:", attributeMap);
+                
+                // Only proceed if attributes exist
+                if (attributeMap && Object.keys(attributeMap).length > 0) {
+                    // Check if name and zip attributes exist before accessing
+                    var name = attributeMap.name ? attributeMap.name.value : "Not provided";
+                    var zip = attributeMap.zip ? attributeMap.zip.value : "Not provided";
+                    
+                    console.log("Name:", name);
+                    console.log("Zip:", zip);
+                    
+                    // Display the information without extra quotes
+                    window.alert("Customer's name: " + name + "\nCustomer's zip #: " + zip);
+                } else {
+                    console.log("No attributes available for this contact");
+                }
+            } catch (error) {
+                console.error('Error handling contact attributes:', error);
+            }
+        }
     </script>
 </body>
 </html>
+Last edited just now
